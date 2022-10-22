@@ -3,6 +3,18 @@
 
 #include <QMainWindow>
 
+#include <QProcess>
+#include <QNetworkRequest>
+#include <QNetworkAccessManager>
+#include <QTimer>
+#include <QNetworkReply>
+#include <QStringList>
+#include <QTextCodec>
+
+#include "controller.h"
+
+
+
 namespace Ui
 {
 class MainWindow;
@@ -15,18 +27,21 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget* parent = 0);
     ~MainWindow();
-    QString win_pingIp(QString ipStr);
-    QStringList getIpList(QString txt);
-    QString getMs(QString txt);
-    QString addMsFormat(QString txt);
-    void updateOutputIP(QString txt, bool bclear);
+    void  printThreadId(QString);
 
-    static bool IsHostOnline(QString strHostName, int nTimeoutmSeconds = 2000);
 private slots:
     void on_btnCheck_clicked();
+    void updateOutputIP(QString, bool);
+    void updateTextBrowser(QString);
 
 private:
     Ui::MainWindow* ui;
+    Controller* workCtrl;
+
+signals:
+    void signal_updateUIBrowser(QString);
+    void signal_updateUIOutPut(QString txt, bool bclear);
+    void signal_endThread();
 };
 
 #endif // MAINWINDOW_H
