@@ -41,7 +41,6 @@ void MainWindow::updateOutputIP(QString txt, bool bclear)
 
 void MainWindow::updateTextBrowser(QString txt)
 {
-    ui->textBrowser->clear();
     ui->textBrowser->setText(txt);
 
 }

@@ -41,15 +41,17 @@ void Worker::onReplyFinished(QNetworkReply* reply)
 QStringList Worker::getIpList(QString str)
 {
     // 换行分割ip的字符串文本 转换成 QStringList
-    QRegExp regx("\\d+\\.\\d+\\.\\d+\\.\\d+");
+    QRegExp regx(">(\\d+\\.\\d+\\.\\d+\\.\\d+)<");
+
     QStringList list;
     int pos = 0;
+
     while((pos = regx.indexIn(str, pos)) != -1)
     {
-        list << regx.cap(0);
+        list << regx.cap(1);
         pos += regx.matchedLength();
     }
-    //    qDebug() << "list : " << list;
+
     return list;
 }
 
@@ -67,6 +69,8 @@ void Worker::handleIpByList(QStringList ipList)
 
     //    int size = 10;
     qDebug() << QString::number(size);
+    qDebug() << ipList;
+
     for(int i = 0; i < size; i++)
     {
         QString ip = ipList.at(i);
@@ -94,6 +98,7 @@ QString Worker::win_pingIp(QString ipStr)
     //    ping命令也可以提供用户选择，目前暂时写死
     //    -n是次数 -i是生存时间
     QString strArg = "ping " + ipStr + " -n 1";
+    qDebug() << strArg;
     pingProcess.start(strArg, QIODevice::ReadOnly);
     pingProcess.waitForFinished(-1);
 
