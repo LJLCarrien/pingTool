@@ -29,7 +29,7 @@ void Controller::handleUrl(QString url)
 
 void Controller::handleIp()
 {
-    emit worker->handleIp();
+    worker->handleIp();
 }
 
 void Controller:: getIpStr(QString str, bool bclear)
