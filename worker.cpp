@@ -3,6 +3,7 @@
 
 #include <QProcess>
 #include <QRegularExpression>
+#include <QThread>
 
 Worker::Worker(QString url) : QObject()
 {
@@ -12,29 +13,21 @@ Worker::Worker(QString url) : QObject()
 void Worker::doWork(QString requestUrl)
 {
     qDebug() << "doWork ...";
-    QNetworkAccessManager* manager = new QNetworkAccessManager(this);
-    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onReplyFinished(QNetworkReply*)));
+    netWorker = NetWorker::instance();
 
-    QNetworkRequest request;
-    request.setUrl(QUrl(requestUrl));
-    request.setRawHeader("Content-Type", "text/html");
-    request.setRawHeader("Content-Type", "charset=UTF-8");
-
-    manager->get(request);
-
-
+    connect(netWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
+    netWorker->get(requestUrl);
 }
 
 void Worker::onReplyFinished(QNetworkReply* reply)
 {
-
-    qDebug() << "onReplyFinished--";
     // 获取响应信息
+    qDebug() << "onReplyFinished-- : current thread ID: " << QThread::currentThreadId();
+
     replyStr  = reply->readAll();
-    //    emit signal_getReplyStr(replyStr);
     reply->deleteLater();
 
-    handleIp();
+    handleIp(replyStr);
 }
 
 
@@ -56,9 +49,10 @@ QStringList Worker::getIpList(QString str)
 }
 
 
-void Worker::handleIp()
+void Worker::handleIp(QString str)
 {
-    QStringList ipList = getIpList(replyStr);
+    qDebug()  << "handleIp: current thread ID: " << QThread::currentThreadId();
+    QStringList ipList = getIpList(str);
     handleIpByList(ipList);
 }
 
@@ -74,7 +68,7 @@ void Worker::handleIpByList(QStringList ipList)
     for(int i = 0; i < size; i++)
     {
         QString ip = ipList.at(i);
-        QString stdOut = win_pingIp(ip);
+        QString stdOut = pingIpForWin(ip);
         QString msValue = getMs(stdOut);
 
         msValue = formatMs(msValue);
@@ -86,19 +80,18 @@ void Worker::handleIpByList(QStringList ipList)
         if(i == size - 1)
         {
             emit signal_finishHandleIp();
-            emit signal_getReplyStr(replyStr);
         }
     }
 }
 
-QString Worker::win_pingIp(QString ipStr)
+QString Worker::pingIpForWin(QString ipStr)
 {
     //这种方法不能跨平台,仅适用于win系统，调用ping命令
     QProcess pingProcess;
     //    ping命令也可以提供用户选择，目前暂时写死
     //    -n是次数 -i是生存时间
     QString strArg = "ping " + ipStr + " -n 1";
-    qDebug() << strArg;
+    //    qDebug() << strArg;
     pingProcess.start(strArg, QIODevice::ReadOnly);
     pingProcess.waitForFinished(-1);
 

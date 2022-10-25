@@ -28,12 +28,14 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     worker.cpp \
-    controller.cpp
+    controller.cpp \
+    networker.cpp
 
 HEADERS += \
         mainwindow.h \
     worker.h \
-    controller.h
+    controller.h \
+    networker.h
 
 FORMS += \
         mainwindow.ui

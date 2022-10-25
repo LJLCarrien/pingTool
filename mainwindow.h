@@ -4,13 +4,6 @@
 #include <QMainWindow>
 
 #include <QProcess>
-#include <QNetworkRequest>
-#include <QNetworkAccessManager>
-#include <QTimer>
-#include <QNetworkReply>
-#include <QStringList>
-#include <QTextCodec>
-
 #include "controller.h"
 
 
@@ -27,21 +20,17 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget* parent = 0);
     ~MainWindow();
-    void  printThreadId(QString);
 
 private slots:
     void on_btnCheck_clicked();
-    void updateOutputIP(QString, bool);
-    void updateTextBrowser(QString);
+
+signals:
 
 private:
     Ui::MainWindow* ui;
     Controller* workCtrl;
-
-signals:
-    void signal_updateUIBrowser(QString);
-    void signal_updateUIOutPut(QString txt, bool bclear);
-    void signal_endThread();
+    void  printThreadId(QString);
+    void updateOutputIP(QString, bool);
 };
 
 #endif // MAINWINDOW_H

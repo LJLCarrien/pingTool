@@ -3,9 +3,10 @@
 
 #include <QObject>
 #include <QThread>
+#include <qDebug>
 
 #include <worker.h>
-#include <qDebug>
+
 
 class Controller : public QObject
 {
@@ -14,27 +15,19 @@ class Controller : public QObject
 public:
     explicit Controller();
     ~Controller();
-
-    void printfThread();
+    void beginWork(QString url);
 
 public slots:
-    void handleUrl(QString url);
-    void handleIp();
-    void finishWork();
-    void getIpStr(QString txt, bool bclear);
-    void updateBrowserStr(QString txt);
 
+signals:
+    void signal_finishWork();
+    void signal_updateOutPut(QString str, bool bclear);
 
 private:
     QThread workerThread;
     Worker* worker;
 
-signals:
-    void signal_handleUrl(QString url);
-    void signal_HandleIp();
-    void signal_finishWork();
-    void signal_updateOutPut(QString str, bool bclear);
-    void signal_updateBrowser(QString str);
+    void printfThread(QString str);
 };
 
 #endif // CONTROLLER_H

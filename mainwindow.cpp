@@ -8,8 +8,11 @@ MainWindow::MainWindow(QWidget* parent) :
     ui->setupUi(this);
 
     workCtrl = new Controller;
-    connect(workCtrl, SIGNAL(signal_updateOutPut(QString, bool)), this, SLOT(updateOutputIP(QString, bool)));
-    //    connect(workCtrl, SIGNAL(signal_updateBrowser(QString)), this, SLOT(updateTextBrowser(QString)));
+    connect(workCtrl, &Controller::signal_updateOutPut, this, &MainWindow::updateOutputIP);
+    connect(workCtrl, &Controller::signal_finishWork, this, [ = ]()
+    {
+        updateOutputIP("-----完成-----", false);
+    });
 }
 
 MainWindow::~MainWindow()
@@ -19,9 +22,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_btnCheck_clicked()
 {
+    qDebug()  << "on_btnCheck_clicked: current thread ID: " << QThread::currentThreadId();
     QString url = QString("https://site.ip138.com/").append(ui->inputIP->toPlainText());
-    qDebug() << "url: " << url;
-    emit workCtrl->signal_handleUrl(url);
+    //    qDebug() << "url: " << url;
+    workCtrl->beginWork(url);
 }
 
 void MainWindow:: printThreadId(QString txt)
@@ -36,13 +40,6 @@ void MainWindow::updateOutputIP(QString txt, bool bclear)
         ui->outputIP->clear();
     }
     ui->outputIP->appendHtml(txt);
-}
-
-
-void MainWindow::updateTextBrowser(QString txt)
-{
-    ui->textBrowser->setText(txt);
-
 }
 
 

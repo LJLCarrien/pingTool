@@ -41,9 +41,6 @@
      <item>
       <widget class="QPlainTextEdit" name="outputIP"/>
      </item>
-     <item>
-      <widget class="QTextBrowser" name="textBrowser"/>
-     </item>
     </layout>
    </widget>
   </widget>
