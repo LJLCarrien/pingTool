@@ -5,29 +5,120 @@
 #include <QRegularExpression>
 #include <QThread>
 
-Worker::Worker(QString url) : QObject()
+
+Worker::Worker() : QObject()
 {
-    doWork(url);
+
 }
 
-void Worker::doWork(QString requestUrl)
+void Worker::doGetByUrl(const QString& url)
 {
-    qDebug() << "doWork ...";
-    netWorker = NetWorker::instance();
+    qDebug() << "[Worker] doGetByUrl ... " << QThread::currentThreadId() << QThread::currentThread();
 
+    netWorker = NetWorker::instance();
     connect(netWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
-    netWorker->get(requestUrl);
+    QNetworkReply* reply = netWorker->get(url);
+    replyEnumMap.insert(reply, NetWorker::RemoteRequest::fetchByUrl);
+
+    qDebug() << "[Worker] replyEnumMap Size: " << replyEnumMap.size();
+
+}
+
+void Worker::doGetByIp(const QString& url, const QString& ip)
+{
+    qDebug() << "[Worker] doGetByIp ..." << QThread::currentThreadId() << QThread::currentThread();
+
+    //    netWorker = NetWorker::instance();
+    //    connect(netWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
+    QNetworkReply* reply = netWorker->getByIp(url, ip);
+    replyEnumMap.insert(reply, NetWorker::RemoteRequest::fetchByIp);
+    replyIpMap.insert(reply, ip);
+
+    qDebug() << "[Worker] replyEnumMap Size: " << replyEnumMap.size();
 }
 
 void Worker::onReplyFinished(QNetworkReply* reply)
 {
     // 获取响应信息
-    qDebug() << "onReplyFinished-- : current thread ID: " << QThread::currentThreadId();
+    //    qDebug() << "onReplyFinished-- :" << QThread::currentThreadId() << QThread::currentThread();
 
-    replyStr  = reply->readAll();
+    QString replyStr  = reply->readAll();
+
+    if(replyEnumMap.isEmpty())
+    {
+        return;
+    }
+    NetWorker::RemoteRequest enumValueReq = replyEnumMap.value(reply);
+    qDebug() << enumValueReq;
+    switch(enumValueReq)
+    {
+
+        case NetWorker::RemoteRequest::fetchByUrl:
+        {
+
+            qDebug() << "[Worker] onReplyFinished-- fetchByUrl:" << QThread::currentThreadId() << QThread::currentThread();
+            //            handleIp(replyStr);
+            emit signal_finishReply(replyStr);
+            break;
+        }
+        case NetWorker::RemoteRequest::fetchByIp:
+        {
+            qDebug() << "[Worker] onReplyFinished-- fetchByIp:" << QThread::currentThreadId() << QThread::currentThread();
+            //todo:还需要判断返回内容，是否只要有返回就可以访问，还是需要额外的判断
+            QString ip = replyIpMap.value(reply);
+            if(!ip.isEmpty())
+            {
+                okIpList.append(ip);
+            }
+            fetchByIpCount--;
+            //所有fetchIp都已返回，直到返回的是最后才触发
+            if(isExistFetchByIp() && fetchByIpCount == 0)
+            {
+                pingIPsByList(okIpList);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    replyEnumMap.remove(reply);
+    if(!replyEnumMap.isEmpty())
+    {
+        qDebug() << "[Worker] replyEnumMap Size: " << replyEnumMap.size();
+    }
+    else
+    {
+        qDebug() << "[Worker] replyEnumMap Size: 0" ;
+    }
     reply->deleteLater();
+}
 
-    handleIp(replyStr);
+bool Worker::isExistFetchByIp()
+{
+    QList<NetWorker::RemoteRequest> list = replyEnumMap.values();
+
+    int size = list.size();
+    for(int i = 0; i < size; i++)
+    {
+        NetWorker::RemoteRequest item = list.at(i);
+        qDebug() << item;
+        if(item == NetWorker::RemoteRequest::fetchByIp)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void Worker::handleIp(const QString& str)
+{
+    qDebug()  << "[Worker] handleIp: current thread ID: " << QThread::currentThreadId() << QThread::currentThread();
+    QStringList ipList = getIpList(str);
+
+    checkIpIsOk(ipList);
+    //    pingIPsByList(ipList);
 }
 
 
@@ -49,25 +140,33 @@ QStringList Worker::getIpList(QString str)
 }
 
 
-void Worker::handleIp(QString str)
+void Worker::checkIpIsOk(const QStringList ipList)
 {
-    qDebug()  << "handleIp: current thread ID: " << QThread::currentThreadId();
-    QStringList ipList = getIpList(str);
-    handleIpByList(ipList);
+    int size = ipList.size();
+    qDebug() << "[Worker] checkIpIsOk...,size: " << size;
+    //    qDebug() << QString::number(size);
+    //    qDebug() << ipList;
+    fetchByIpCount = size;
+    for(int i = 0; i < size; i++)
+    {
+        QString ip = ipList.at(i);
+        doGetByIp(requestUrl, ip);
+    }
 }
 
-void Worker::handleIpByList(QStringList ipList)
+
+void Worker::pingIPsByList(QStringList ipList)
 {
-
     int size = ipList.size();
+    qDebug() << "[Worker] pingIPsByList...,size: " << size;
 
-    //    int size = 10;
     qDebug() << QString::number(size);
     qDebug() << ipList;
 
     for(int i = 0; i < size; i++)
     {
         QString ip = ipList.at(i);
+
         QString stdOut = pingIpForWin(ip);
         QString msValue = getMs(stdOut);
 

@@ -3,6 +3,9 @@
 
 #include <QObject>
 #include <QNetworkReply>
+#include <QNetworkProxy>
+#include <QThread>
+
 class NetWorker : public QObject
 {
     Q_OBJECT
@@ -10,7 +13,14 @@ public:
     static NetWorker* instance();
     ~NetWorker();
 
-    void get(const QString& url);
+    QNetworkReply* get(const QString& url);
+    QNetworkReply* getByIp(const QString& url, const QString& ip);
+
+    enum RemoteRequest
+    {
+        fetchByUrl,
+        fetchByIp
+    };
 
 signals:
     void finished(QNetworkReply* reply);
@@ -21,7 +31,11 @@ private:
     class Private
     {
     public:
-        Private(NetWorker* q): manager(new QNetworkAccessManager(q)) {}
+        Private(NetWorker* q)
+        {
+            manager = new QNetworkAccessManager(q);
+            qDebug()  << "Private: current thread ID: " << QThread::currentThreadId() << QThread::currentThread();
+        }
         QNetworkAccessManager* manager;
     }
     ;

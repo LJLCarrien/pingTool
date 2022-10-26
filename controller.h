@@ -15,10 +15,11 @@ class Controller : public QObject
 public:
     explicit Controller();
     ~Controller();
-    void beginWork(QString url);
+    void doByUrl(const QString& url);
+    void doByUrlIP(const QString& url, const QString& ip);
 
 public slots:
-
+    void handleIp(const QString& reply);
 signals:
     void signal_finishWork();
     void signal_updateOutPut(QString str, bool bclear);
