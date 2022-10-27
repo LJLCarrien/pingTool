@@ -22,7 +22,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_btnCheck_clicked()
 {
-    qDebug()  << "on_btnCheck_clicked: current thread ID: " << QThread::currentThreadId() << QThread::currentThread();
+    printThreadId("on_btnCheck_clicked");
     //    QString url = QString("https://site.ip138.com/").append(ui->inputIP->toPlainText());
     QString url = QString("https://site.ip138.com/files.tmdb.org");
     //    qDebug() << "url: " << url;
@@ -32,7 +32,7 @@ void MainWindow::on_btnCheck_clicked()
 
 void MainWindow:: printThreadId(QString txt)
 {
-    qDebug() << txt << QThread::currentThreadId() << QThread::currentThread() << QThread::currentThread();
+    qDebug() << QString("[MainWIndow] %1: ").arg(txt) << QThread::currentThreadId() << QThread::currentThread();
 }
 
 void MainWindow::updateOutputIP(QString txt, bool bclear)

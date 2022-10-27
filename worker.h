@@ -44,6 +44,8 @@ private :
 
     QString getMs(QString txt);
     QString formatMs(QString txt);
+
+    void debugThreadId(QString funcName);
 };
 
 #endif // WORKER_H
