@@ -20,11 +20,11 @@ Controller::~Controller()
     workerThread.wait();
 }
 
-void Controller::doByUrl(const QString& url)
+void Controller::doByUrl(const QString& requestHost, const QString& checkHost)
 {
     printfThread("doByUrl---------");
 
-    worker->doGetByUrl(url);
+    worker->doGetByUrl(requestHost, checkHost);
     workerThread.start();
 }
 
@@ -32,7 +32,7 @@ void Controller::doByUrlIP(const QString& url, const QString& ip)
 {
     printfThread("doByUrlIP---------");
 
-    worker->doGetByIp(url, ip);
+    worker->doGetCheckIp(url, ip);
     workerThread.start();
 }
 

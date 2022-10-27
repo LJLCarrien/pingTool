@@ -14,7 +14,7 @@ public:
     ~NetWorker();
 
     QNetworkReply* get(const QString& url);
-    QNetworkReply* getByIp(const QString& url, const QString& ip);
+    QNetworkReply* getWithHostPort(const QString& url, const QString& ip, int port = 80);
 
     enum RemoteRequest
     {

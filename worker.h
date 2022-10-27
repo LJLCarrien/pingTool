@@ -12,8 +12,8 @@ class Worker : public QObject
     Q_OBJECT
 public:
     explicit Worker();
-    void doGetByUrl(const QString& Url);
-    void doGetByIp(const QString& url, const QString& ip);
+    void doGetByUrl(const QString& rqHost, const QString& ckHost);
+    void doGetCheckIp(const QString& checkHost, const QString& ip);
     void handleIp(const QString&  str);
 
 
@@ -27,7 +27,8 @@ signals:
     void signal_finishHandleIp();
 
 private :
-    QString requestUrl;
+    QString requestHost;
+    QString checkHost;
     NetWorker* netWorker;
     QMap<QNetworkReply*, NetWorker::RemoteRequest>replyEnumMap;
     int fetchByIpCount;

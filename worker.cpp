@@ -11,13 +11,18 @@ Worker::Worker() : QObject()
 
 }
 
-void Worker::doGetByUrl(const QString& url)
+void Worker::doGetByUrl(const QString& rqHost, const QString& ckHost)
 {
     debugThreadId("doGetByUrl");
+
+    requestHost = rqHost;
+    checkHost = ckHost;
 
     netWorker = NetWorker::instance();
     connect(netWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
 
+    QString url = QString("https://").append(requestHost).append("/").append(checkHost);
+    qDebug() << "[Worker] url : " << url;
     QNetworkReply* reply = netWorker->get(url);
     replyEnumMap.insert(reply, NetWorker::RemoteRequest::fetchByUrl);
 
@@ -25,11 +30,15 @@ void Worker::doGetByUrl(const QString& url)
 
 }
 
-void Worker::doGetByIp(const QString& url, const QString& ip)
+
+void Worker::doGetCheckIp(const QString& ckHost, const QString& ip)
 {
     debugThreadId("doGetByIp");
 
-    QNetworkReply* reply = netWorker->getByIp(url, ip);
+    QString url = QString("https://").append(ckHost);
+
+    qDebug() << "[Worker] doGetCheckIp url:" << url;
+    QNetworkReply* reply = netWorker->getWithHostPort(url, ip);
     replyEnumMap.insert(reply, NetWorker::RemoteRequest::fetchByIp);
     replyIpMap.insert(reply, ip);
 
@@ -57,7 +66,7 @@ void Worker:: onReplyFinished(QNetworkReply* reply)
 
             qDebug() << "[Worker] onReplyFinished-- fetchByUrl:" << QThread::currentThreadId() << QThread::currentThread();
 
-            qDebug() << replyStr;
+            //            qDebug() << replyStr;
 
             emit signal_finishReply(replyStr);
             break;
@@ -65,11 +74,31 @@ void Worker:: onReplyFinished(QNetworkReply* reply)
         case NetWorker::RemoteRequest::fetchByIp:
         {
             qDebug() << "[Worker] onReplyFinished-- fetchByIp:" << QThread::currentThreadId() << QThread::currentThread();
-            //todo:还需要判断返回内容，是否只要有返回就可以访问，还是需要额外的判断
+
             QString ip = replyIpMap.value(reply);
+
+            QVariant qv = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+
+            QString code = qv.toString();
+            bool bValid = qv.isValid();
+            qDebug() << QString("[Worker] %1 : %2 : %3").arg(ip).arg(bValid).arg(code);
             if(!ip.isEmpty())
             {
-                okIpList.append(ip);
+                if(qv.isValid())
+                {
+                    if(code == 200)
+                    {
+                        okIpList.append(ip);
+                    }
+                    else
+                    {
+                        qDebug() << ip.append("  Status Code:").append(code);
+                    }
+                }
+                else
+                {
+                    qDebug() << ip.append(" 无效");
+                }
             }
             fetchByIpCount--;
             //所有fetchIp都已返回，直到返回的是最后才触发
@@ -141,6 +170,7 @@ QStringList Worker::getIpList(QString str)
     }
 
 
+    qDebug() << list.size();
     qDebug() << list;
     return list;
 }
@@ -156,7 +186,7 @@ void Worker::checkIpIsOk(const QStringList ipList)
     for(int i = 0; i < size; i++)
     {
         QString ip = ipList.at(i);
-        doGetByIp(requestUrl, ip);
+        doGetCheckIp(checkHost, ip);
     }
 }
 
@@ -169,6 +199,13 @@ void Worker::pingIPsByList(QStringList ipList)
     qDebug() << QString::number(size);
     qDebug() << ipList;
 
+    if(size == 0)
+    {
+        emit signal_finishHandleIp();
+        qDebug() << "完成";
+        return;
+    }
+
     for(int i = 0; i < size; i++)
     {
         QString ip = ipList.at(i);
@@ -179,12 +216,13 @@ void Worker::pingIPsByList(QStringList ipList)
         msValue = formatMs(msValue);
         QString result = QString("%1 %2").arg(ip).arg(msValue);
 
-        qDebug() << result;
+        //        qDebug() << result;
         emit signal_getIpStr(result, i == 0);
 
         if(i == size - 1)
         {
             emit signal_finishHandleIp();
+            qDebug() << "完成";
         }
     }
 }

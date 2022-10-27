@@ -23,11 +23,11 @@ MainWindow::~MainWindow()
 void MainWindow::on_btnCheck_clicked()
 {
     printThreadId("on_btnCheck_clicked");
-    //    QString url = QString("https://site.ip138.com/").append(ui->inputIP->toPlainText());
-    QString url = QString("https://site.ip138.com/files.tmdb.org");
-    //    qDebug() << "url: " << url;
-    workCtrl->doByUrl(url);
-    //    workCtrl->doByUrlIP(url, "147.92.47.123");
+
+    QString requestUrl = ui->inputIP->toPlainText();
+    QString host = ui->inputHost->toPlainText();
+
+    workCtrl->doByUrl(requestUrl, host);
 }
 
 void MainWindow:: printThreadId(QString txt)

@@ -15,7 +15,7 @@ class Controller : public QObject
 public:
     explicit Controller();
     ~Controller();
-    void doByUrl(const QString& url);
+    void doByUrl(const QString& requestHost, const QString& checkHost);
     void doByUrlIP(const QString& url, const QString& ip);
 
 public slots:

@@ -18,13 +18,13 @@ QNetworkReply* NetWorker::get(const QString& url)
     return d->manager->get(QNetworkRequest(QUrl(url)));
 }
 
-QNetworkReply* NetWorker::getByIp(const QString& url, const QString& ip)
+QNetworkReply* NetWorker::getWithHostPort(const QString& url, const QString& ip, int port)
 {
     QUrl qUrl = QUrl(url);
     QString host = qUrl.host();
 
     QNetworkProxy proxy;
-    proxy.setPort(ip.toShort());
+    proxy.setPort(port);
     proxy.setHostName(host);
     d->manager->setProxy(proxy);
 

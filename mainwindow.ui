@@ -27,7 +27,18 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QPlainTextEdit" name="inputIP"/>
+        <widget class="QPlainTextEdit" name="inputIP">
+         <property name="plainText">
+          <string>site.ip138.com</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="inputHost">
+         <property name="plainText">
+          <string>image.tmdb.org</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="btnCheck">
