@@ -84,15 +84,14 @@ void Worker:: onReplyFinished(QNetworkReply* reply)
             {
                 if(qv.isValid())
                 {
-                    okIpList.append(ip);
-                    //                    if(code == 200)
-                    //                    {
-                    //                        okIpList.append(ip);
-                    //                    }
-                    //                    else
-                    //                    {
-                    //                        qDebug() << ip.append("  Status Code:").append(code);
-                    //                    }
+                    if(code == 200)
+                    {
+                        okIpList.append(ip);
+                    }
+                    else
+                    {
+                        qDebug() << ip.append("  Status Code:").append(code);
+                    }
                 }
                 else
                 {
