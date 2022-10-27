@@ -8,7 +8,8 @@
 
 Worker::Worker() : QObject()
 {
-
+    netWorker = NetWorker::instance();
+    connect(netWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
 }
 
 void Worker::doGetByUrl(const QString& rqHost, const QString& ckHost)
@@ -17,9 +18,6 @@ void Worker::doGetByUrl(const QString& rqHost, const QString& ckHost)
 
     requestHost = rqHost;
     checkHost = ckHost;
-
-    netWorker = NetWorker::instance();
-    connect(netWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
 
     QString url = QString("https://").append(requestHost).append("/").append(checkHost);
     qDebug() << "[Worker] url : " << url;
@@ -86,14 +84,15 @@ void Worker:: onReplyFinished(QNetworkReply* reply)
             {
                 if(qv.isValid())
                 {
-                    if(code == 200)
-                    {
-                        okIpList.append(ip);
-                    }
-                    else
-                    {
-                        qDebug() << ip.append("  Status Code:").append(code);
-                    }
+                    okIpList.append(ip);
+                    //                    if(code == 200)
+                    //                    {
+                    //                        okIpList.append(ip);
+                    //                    }
+                    //                    else
+                    //                    {
+                    //                        qDebug() << ip.append("  Status Code:").append(code);
+                    //                    }
                 }
                 else
                 {
@@ -175,6 +174,25 @@ QStringList Worker::getIpList(QString str)
     return list;
 }
 
+void Worker::resetAll()
+{
+    if(!replyEnumMap.isEmpty())
+    {
+        replyEnumMap.clear();
+    }
+    if(!replyIpMap.isEmpty())
+    {
+        replyIpMap.clear();
+    }
+    if(!okIpList.isEmpty())
+    {
+        okIpList.clear();
+    }
+    fetchByIpCount = 0;
+    requestHost = "";
+    checkHost = "";
+
+}
 
 void Worker::checkIpIsOk(const QStringList ipList)
 {
@@ -183,6 +201,7 @@ void Worker::checkIpIsOk(const QStringList ipList)
     //    qDebug() << QString::number(size);
     //    qDebug() << ipList;
     fetchByIpCount = size;
+
     for(int i = 0; i < size; i++)
     {
         QString ip = ipList.at(i);

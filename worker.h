@@ -15,6 +15,7 @@ public:
     void doGetByUrl(const QString& rqHost, const QString& ckHost);
     void doGetCheckIp(const QString& checkHost, const QString& ip);
     void handleIp(const QString&  str);
+    void resetAll();
 
 
 private slots:

@@ -27,6 +27,7 @@ void MainWindow::on_btnCheck_clicked()
     QString requestUrl = ui->inputIP->toPlainText();
     QString host = ui->inputHost->toPlainText();
 
+    updateOutputIP("-----开始-----", true);
     workCtrl->doByUrl(requestUrl, host);
 }
 

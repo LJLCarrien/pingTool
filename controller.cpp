@@ -24,15 +24,8 @@ void Controller::doByUrl(const QString& requestHost, const QString& checkHost)
 {
     printfThread("doByUrl---------");
 
+    worker->resetAll();
     worker->doGetByUrl(requestHost, checkHost);
-    workerThread.start();
-}
-
-void Controller::doByUrlIP(const QString& url, const QString& ip)
-{
-    printfThread("doByUrlIP---------");
-
-    worker->doGetCheckIp(url, ip);
     workerThread.start();
 }
 
