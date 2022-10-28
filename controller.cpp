@@ -10,8 +10,6 @@ Controller::Controller() : QObject()
 
     connect(worker, &Worker::signal_getIpStr, this, &Controller::signal_updateOutPut);
     connect(worker, &Worker::signal_finishHandleIp, this, &Controller::signal_finishWork);
-    connect(worker, &Worker::signal_finishReply, this, &Controller::handleIp);
-
 }
 
 Controller::~Controller()
@@ -24,19 +22,12 @@ void Controller::doByUrl(const QString& requestHost, const QString& checkHost)
 {
     printfThread("doByUrl---------");
 
-    worker->resetAll();
-    worker->doGetByUrl(requestHost, checkHost);
+    emit worker->signal_initAll();
+    emit worker->signal_doGetByUrl(requestHost, checkHost);
     workerThread.start();
 }
 
-void Controller::handleIp(const QString& reply)
-{
-    printfThread("handleIp---------");
-    worker->handleIp(reply);
-}
-
-
 void Controller::printfThread(QString str)
 {
-    qDebug() << str << ": current thread ID: " << QThread::currentThreadId() << QThread::currentThread();
+    qDebug()  << QString("[Controller] %1: ").arg(str) << QThread::currentThreadId() << QThread::currentThread();
 }

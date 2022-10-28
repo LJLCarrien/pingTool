@@ -6,10 +6,59 @@
 #include <QThread>
 
 
-Worker::Worker() : QObject()
+Worker::Worker()
 {
-    netWorker = NetWorker::instance();
-    connect(netWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
+    connect(this, &Worker::signal_doGetByUrl, this, &Worker::doGetByUrl);
+    connect(this, &Worker::signal_handleIp, this, &Worker::handleIp);
+    connect(this, &Worker::signal_resetAll, this, &Worker::resetAll);
+    connect(this, &Worker::signal_initAll, this, &Worker::initAll);
+}
+
+
+Worker::~Worker()
+{
+    resetAll();
+}
+
+
+void Worker::initAll()
+{
+    resetAll();
+    initNetworker();
+}
+
+
+void Worker::resetAll()
+{
+    if(!replyEnumMap.isEmpty())
+    {
+        replyEnumMap.clear();
+    }
+    if(!replyIpMap.isEmpty())
+    {
+        replyIpMap.clear();
+    }
+    if(!okIpList.isEmpty())
+    {
+        okIpList.clear();
+    }
+    fetchByIpCount = 0;
+    requestHost = "";
+    checkHost = "";
+
+    if(pNetWorker != nullptr)
+    {
+        pNetWorker = nullptr;
+    }
+}
+
+void Worker::initNetworker()
+{
+    if(pNetWorker == nullptr)
+    {
+        pNetWorker = new NetWorker();
+        connect(pNetWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
+    }
 }
 
 void Worker::doGetByUrl(const QString& rqHost, const QString& ckHost)
@@ -21,7 +70,7 @@ void Worker::doGetByUrl(const QString& rqHost, const QString& ckHost)
 
     QString url = QString("https://").append(requestHost).append("/").append(checkHost);
     qDebug() << "[Worker] url : " << url;
-    QNetworkReply* reply = netWorker->get(url);
+    QNetworkReply* reply = pNetWorker->get(url);
     replyEnumMap.insert(reply, NetWorker::RemoteRequest::fetchByUrl);
 
     qDebug() << "[Worker] replyEnumMap Size: " << replyEnumMap.size();
@@ -31,12 +80,17 @@ void Worker::doGetByUrl(const QString& rqHost, const QString& ckHost)
 
 void Worker::doGetCheckIp(const QString& ckHost, const QString& ip)
 {
+    if(pNetWorker == nullptr)
+    {
+        pNetWorker = new NetWorker();
+        connect(pNetWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
+    }
     debugThreadId("doGetByIp");
 
     QString url = QString("https://").append(ckHost);
 
     qDebug() << "[Worker] doGetCheckIp url:" << url;
-    QNetworkReply* reply = netWorker->getWithHostPort(url, ip);
+    QNetworkReply* reply = pNetWorker->getWithHostPort(url, ip);
     replyEnumMap.insert(reply, NetWorker::RemoteRequest::fetchByIp);
     replyIpMap.insert(reply, ip);
 
@@ -65,8 +119,7 @@ void Worker:: onReplyFinished(QNetworkReply* reply)
             qDebug() << "[Worker] onReplyFinished-- fetchByUrl:" << QThread::currentThreadId() << QThread::currentThread();
 
             //            qDebug() << replyStr;
-
-            emit signal_finishReply(replyStr);
+            handleIp(replyStr);
             break;
         }
         case NetWorker::RemoteRequest::fetchByIp:
@@ -142,7 +195,7 @@ bool Worker::isExistFetchByIp()
 
 void Worker::handleIp(const QString& str)
 {
-    debugThreadId("handleIp");
+    debugThreadId("handleIp------");
 
     QStringList ipList = getIpList(str);
 
@@ -173,25 +226,6 @@ QStringList Worker::getIpList(QString str)
     return list;
 }
 
-void Worker::resetAll()
-{
-    if(!replyEnumMap.isEmpty())
-    {
-        replyEnumMap.clear();
-    }
-    if(!replyIpMap.isEmpty())
-    {
-        replyIpMap.clear();
-    }
-    if(!okIpList.isEmpty())
-    {
-        okIpList.clear();
-    }
-    fetchByIpCount = 0;
-    requestHost = "";
-    checkHost = "";
-
-}
 
 void Worker::checkIpIsOk(const QStringList ipList)
 {
@@ -206,6 +240,9 @@ void Worker::checkIpIsOk(const QStringList ipList)
         QString ip = ipList.at(i);
         doGetCheckIp(checkHost, ip);
     }
+
+    //    disconnect(pNetWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
+    //    pNetWorker = nullptr;
 }
 
 

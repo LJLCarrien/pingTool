@@ -17,8 +17,6 @@ public:
     ~Controller();
     void doByUrl(const QString& requestHost, const QString& checkHost);
 
-public slots:
-    void handleIp(const QString& reply);
 signals:
     void signal_finishWork();
     void signal_updateOutPut(QString str, bool bclear);

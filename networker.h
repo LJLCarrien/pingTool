@@ -9,12 +9,13 @@
 class NetWorker : public QObject
 {
     Q_OBJECT
-public:
-    static NetWorker* instance();
+
+public: NetWorker();
     ~NetWorker();
 
     QNetworkReply* get(const QString& url);
-    QNetworkReply* getWithHostPort(const QString& url, const QString& ip, int port = 80);
+    QNetworkReply* getWithHostPort(const QString& url, const QString& host, int port = 80);
+    void debugThreadId(const QString& funcName);
 
     enum RemoteRequest
     {
@@ -22,31 +23,12 @@ public:
         fetchByIp
     };
 
+private:
+    QNetworkAccessManager* manager;
+
 signals:
     void finished(QNetworkReply* reply);
-
-public slots:
-
-private:
-    class Private
-    {
-    public:
-        Private(NetWorker* q)
-        {
-            manager = new QNetworkAccessManager(q);
-            qDebug()  << "Private: current thread ID: " << QThread::currentThreadId() << QThread::currentThread();
-        }
-        QNetworkAccessManager* manager;
-    }
-    ;
-    friend class Private;
-    Private* d;
-
-    explicit NetWorker(QObject* parent = 0);
-    //将所修饰的函数声明为 deleted（C++11 的新特性）
-    NetWorker(const NetWorker&) Q_DECL_EQ_DELETE;
-    NetWorker operator=(NetWorker rhs) Q_DECL_EQ_DELETE;
-
 };
 
 #endif // NETWORKER_H
+

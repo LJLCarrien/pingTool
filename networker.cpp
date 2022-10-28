@@ -1,40 +1,42 @@
 #include "networker.h"
-#include <QMutex>
-NetWorker* NetWorker::instance()
+
+NetWorker::NetWorker()
 {
-    //C++单例模式的最简单写法
-    static NetWorker netWorker;
-    return &netWorker;
+    manager = new QNetworkAccessManager(this);
+    connect(manager, &QNetworkAccessManager::finished, this, &NetWorker::finished);
+
+    debugThreadId("NetWorker");
 }
 
 NetWorker::~NetWorker()
 {
-    delete d;
-    d = nullptr;
+    delete manager;
 }
 
 QNetworkReply* NetWorker::get(const QString& url)
 {
-    return d->manager->get(QNetworkRequest(QUrl(url)));
+    debugThreadId("get");
+    return manager->get(QNetworkRequest(QUrl(url)));
 }
 
-QNetworkReply* NetWorker::getWithHostPort(const QString& url, const QString& ip, int port)
+QNetworkReply* NetWorker::getWithHostPort(const QString& url, const QString& host, int port)
 {
+    debugThreadId("getWithHostPort");
+
     QUrl qUrl = QUrl(url);
-    QString host = qUrl.host();
 
     QNetworkProxy proxy;
     proxy.setPort(port);
     proxy.setHostName(host);
-    d->manager->setProxy(proxy);
+    manager->setProxy(proxy);
 
     QNetworkRequest req(qUrl);
 
-    return d->manager->get(req);
+    return manager->get(req);
 }
 
-NetWorker::NetWorker(QObject* parent) : QObject(parent), d(new NetWorker::Private(this))
+
+void NetWorker::debugThreadId(const QString& funcName)
 {
-    connect(d->manager, &QNetworkAccessManager::finished, this, &NetWorker::finished);
+    qDebug() << QString("[NetWorker] %1: ").arg(funcName) << QThread::currentThreadId() << QThread::currentThread();
 }
-
