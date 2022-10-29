@@ -78,7 +78,7 @@ void Worker::doGetByUrl(const QString& rqHost, const QString& ckHost)
 }
 
 
-void Worker::doGetCheckIp(const QString& ckHost, const QString& ip)
+void Worker::doGetCheckIp(const QString& ckHost, IpData data)
 {
     if(pNetWorker == nullptr)
     {
@@ -88,11 +88,12 @@ void Worker::doGetCheckIp(const QString& ckHost, const QString& ip)
     debugThreadId("doGetByIp");
 
     QString url = QString("https://").append(ckHost);
+    QString ip = data.ip;
 
     qDebug() << "[Worker] doGetCheckIp url:" << url;
     QNetworkReply* reply = pNetWorker->getWithHostPort(url, ip);
     replyEnumMap.insert(reply, NetWorker::RemoteRequest::fetchByIp);
-    replyIpMap.insert(reply, ip);
+    replyIpMap.insert(reply, data);
 
     qDebug() << "[Worker] replyEnumMap Size: " << replyEnumMap.size();
 }
@@ -126,37 +127,42 @@ void Worker:: onReplyFinished(QNetworkReply* reply)
         {
             qDebug() << "[Worker] onReplyFinished-- fetchByIp:" << QThread::currentThreadId() << QThread::currentThread();
 
-            QString ip = replyIpMap.value(reply);
+            IpData data = replyIpMap.value(reply);
 
             QVariant qv = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
 
             QString code = qv.toString();
+            data.checkCode = code;
+            setIpData(data);
+
             bool bValid = qv.isValid();
-            qDebug() << QString("[Worker] %1 : %2 : %3").arg(ip).arg(bValid).arg(code);
-            if(!ip.isEmpty())
+            qDebug() << QString("[Worker] %1 : %2 : %3").arg(data.ip).arg(bValid).arg(code);
+            if(!(data.ip).isEmpty())
             {
                 if(qv.isValid())
                 {
                     if(code == 200)
                     {
-                        okIpList.append(ip);
+                        okIpList.append(data);
                     }
                     else
                     {
-                        qDebug() << ip.append("  Status Code:").append(code);
+                        qDebug() << (data.ip).append("  Status Code:").append(code);
                     }
                 }
                 else
                 {
-                    qDebug() << ip.append(" 无效");
+                    qDebug() << (data.ip).append(" 无效");
                 }
             }
             fetchByIpCount--;
             //所有fetchIp都已返回，直到返回的是最后才触发
             if(isExistFetchByIp() && fetchByIpCount == 0)
             {
+                showIpData();
                 pingIPsByList(okIpList);
             }
+
             break;
         }
         default:
@@ -222,14 +228,14 @@ QStringList Worker::getIpList(QString str)
 
 
     qDebug() << list.size();
-    qDebug() << list;
+    //    qDebug() << list;
     return list;
 }
 
 
-void Worker::checkIpIsOk(const QStringList ipList)
+void Worker::checkIpIsOk(const QStringList list)
 {
-    int size = ipList.size();
+    int size = list.size();
     qDebug() << "[Worker] checkIpIsOk , size: " << size;
     //    qDebug() << QString::number(size);
     //    qDebug() << ipList;
@@ -237,22 +243,51 @@ void Worker::checkIpIsOk(const QStringList ipList)
 
     for(int i = 0; i < size; i++)
     {
-        QString ip = ipList.at(i);
-        doGetCheckIp(checkHost, ip);
+        QString ip = list.at(i);
+        IpData data(ip);
+        data.statue = IpStatue::checking;
+        ipList.append(data);
+        doGetCheckIp(checkHost, data);
     }
+    showIpData();
+}
 
-    //    disconnect(pNetWorker, &NetWorker::finished, this, &Worker::onReplyFinished);
-    //    pNetWorker = nullptr;
+void Worker::showIpData()
+{
+    debugThreadId("showIpData");
+    int size = ipList.size();
+
+    for(int i = 0; i < size; i++)
+    {
+        IpData pItem = ipList.at(i);
+        qDebug() << pItem.show();
+        emit signal_getIpStr(pItem.show(), i == 0);
+    }
+}
+
+void Worker::setIpData(IpData data)
+{
+    int size = ipList.size();
+
+    for(int i = 0; i < size; i++)
+    {
+        IpData item = ipList.at(i);
+        if(item.ip == data.ip)
+        {
+            ipList.replace(i, data);
+            return;
+        }
+    }
 }
 
 
-void Worker::pingIPsByList(QStringList ipList)
+void Worker::pingIPsByList(QList<IpData> list)
 {
-    int size = ipList.size();
+    int size = list.size();
     qDebug() << "[Worker] pingIPsByList , size: " << size;
 
     qDebug() << QString::number(size);
-    qDebug() << ipList;
+    //    qDebug() << ipList;
 
     if(size == 0)
     {
@@ -261,18 +296,20 @@ void Worker::pingIPsByList(QStringList ipList)
         return;
     }
 
+    IpData ipData;
     for(int i = 0; i < size; i++)
     {
-        QString ip = ipList.at(i);
+        ipData = list.at(i);
+        QString ip = ipData.ip;
 
         QString stdOut = pingIpForWin(ip);
         QString msValue = getMs(stdOut);
 
-        msValue = formatMs(msValue);
-        QString result = QString("%1 %2").arg(ip).arg(msValue);
-
+        ipData.ms = msValue;
+        ipList.replace(i, ipData);
         //        qDebug() << result;
-        emit signal_getIpStr(result, i == 0);
+        emit signal_getIpStr(ipData.show(), i == 0);
+        //        emit signal_getIpStr(result, i == 0);
 
         if(i == size - 1)
         {
@@ -315,18 +352,6 @@ QString Worker::getMs(QString txt)
     return QString::number(0);
 }
 
-QString Worker::formatMs(QString ms)
-{
-    //增加ms格式
-    if(QString::number(0) == ms)
-    {
-        return  QString("<b><font color=\"#FF0000\">%1</font></b>").arg(tr("超时"));
-    }
-    else
-    {
-        return QString("<b><font color=\"#0B9B7A\">%1 ms</font></b>").arg(ms);
-    }
-}
 
 void Worker::debugThreadId(QString funcName)
 {

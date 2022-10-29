@@ -29,13 +29,15 @@ SOURCES += \
         mainwindow.cpp \
     worker.cpp \
     controller.cpp \
-    networker.cpp
+    networker.cpp \
+    ipdata.cpp
 
 HEADERS += \
         mainwindow.h \
     worker.h \
     controller.h \
-    networker.h
+    networker.h \
+    ipdata.h
 
 FORMS += \
         mainwindow.ui
